@@ -35,14 +35,20 @@ pub struct Col {
 }
 
 pub fn extract_column_info(schema: &str) -> Vec<Col> {
-    let column_definitions: Vec<&str> = schema.split(',').map(|s| s.trim()).collect();
+    let column_definitions: Vec<&str> = schema.split(',')
+    .map(|s| s.trim())
+    .filter(|&s| !s.contains("FOREIGN")).collect();
     let mut columns_info = Vec::new();
 
     for definition in column_definitions {
         let parts: Vec<&str> = definition.split_whitespace().collect();
         if parts.len() >= 2 {
             let name = parts[0].to_string();
-            let col_type = parts[1].to_string();
+            let mut col_type = parts[1].to_string();
+            if col_type == "DOUBLE" {
+                col_type.push(' ');
+                col_type.push_str(parts[2])
+            }
             columns_info.push(Col { name, col_type });
         } else if parts.len() == 1 {
             // Handle cases with only a name (e.g., constraints)
@@ -69,6 +75,9 @@ pub fn extract_table_names(file_path: &str) -> Result<Vec<String>, io::Error> {
         let mut table_name = String::new();
         for c in name_start.chars() {
             if c == '(' || c == ' ' || c == '\n' || c == '\r' {
+                break;
+            }
+            if table_name == "foreign"{
                 break;
             }
             table_name.push(c);

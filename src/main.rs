@@ -160,11 +160,15 @@ async fn {funk_name}(
     Json(payload): Json<{struct_name}>,
 ) -> Json<Value> {{
     let query = "INSERT INTO {table_name} ({cols}) VALUES ({feilds})";
-    sqlx::query(query)
+    let result = sqlx::query(query)
     {bind_feilds}
         .execute(&pool)
         .await;
-        Json(json!({{"res": "sucsess"}}))
+    match result {{
+        Ok(value) => Json(json!({{"res": "added"}})),
+        Err(e) => Json(json!({{"res": format!("error: {{}}", e)}}))
+
+    }}
 }}
 "###);
 
@@ -182,6 +186,53 @@ async fn {funk_name}(
 
     Ok(funk_name.to_string())
 }
+
+// fn add_get_some_func(row: &Row, col: &str, fillter: &str, file_path: &str) -> Result<String, io::Error> {
+//     let row_name = row.name.clone();
+//     let func_name = format!("get_{}", row.name.clone());
+//     let struct_name = row.name.clone().to_case(Case::Pascal);
+//     let cols: String = row.cols.iter().map(|col| format!("\t\"{}\": elemint.{}, \n", 
+//         col.name, col.name)
+//         .to_string()).collect::<String>()
+//         .trim_end_matches(", ").to_string();
+    
+
+//     let funk_str = format!(r###"
+
+// async fn {func_name}(
+//     extract::State(pool): extract::State<PgPool>,
+// ) -> Result<Json<Value>, (StatusCode, String)> {{
+//     let query = "SELECT * FROM {row_name}";
+//     let q = sqlx::query_as::<_, {struct_name}>(query);
+
+//     let elemints: Vec<{struct_name}> = q.fetch_all(&pool).await.map_err(|e| {{
+//         (StatusCode::INTERNAL_SERVER_ERROR, format!("Database error: {{}}", e))
+//     }})?;
+
+//     let res_json: Vec<Value> = elemints.into_iter().map(|elemint| {{
+//         json!({{
+//     {cols}
+//         }})
+    
+//     }}).collect();
+
+//     Ok(Json(json!({{ "payload": res_json }})))
+// }}
+// "###);
+
+//     let mut file = OpenOptions::new()
+//         .write(true) // Enable writing to the file.
+//         .append(true) // Set the append mode.  Crucially, this makes it append.
+//         .create(true) // Create the file if it doesn't exist.
+//         .open(file_path)?; // Open the file, returning a Result.
+
+//     file.write_all(funk_str.as_bytes())?; // comment for testing 
+
+//     println!("{}", funk_str);
+
+//     Ok(func_name.to_string())
+// }
+
 
 
 fn add_get_all_func(row: &Row, file_path: &str) -> Result<String, io::Error> {
@@ -303,7 +354,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
 }
 
 fn main() -> Result<(), io::Error> {
-    let rows = create_rows_from_sql("../testing/migrations/0001_work.sql")?;
+    let rows = create_rows_from_sql("../testing/migrations/0001_data.sql")?;
     // println!("Table names: {:?}", rows.iter().map(|row| row.name.clone()).collect::<Vec<String>>());
 
     let path = "src/generated_struct.rs";

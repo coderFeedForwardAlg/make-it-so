@@ -18,11 +18,10 @@ use sqlx::types::chrono::Utc;
 
 #[derive(Debug, Deserialize, FromRow)]
 struct Users {
-    id: uuid::Uuid,
+    user_uuid: uuid::Uuid,
     username: String,
     email: String,
     created_at: chrono::DateTime<Utc>,
-    updated_at: chrono::DateTime<Utc>,
 }
 
 
@@ -30,16 +29,19 @@ async fn add_users(
     extract::State(pool): extract::State<PgPool>,
     Json(payload): Json<Users>,
 ) -> Json<Value> {
-    let query = "INSERT INTO users (id, username, email, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)";
-    sqlx::query(query)
-    	.bind(payload.id)
+    let query = "INSERT INTO users (user_uuid, username, email, created_at) VALUES ($1, $2, $3, $4)";
+    let result = sqlx::query(query)
+    	.bind(payload.user_uuid)
 	.bind(payload.username)
 	.bind(payload.email)
 	.bind(payload.created_at)
-	.bind(payload.updated_at)
         .execute(&pool)
         .await;
-        Json(json!({"res": "sucsess"}))
+    match result {
+        Ok(value) => Json(json!({"res": "added"})),
+        Err(e) => Json(json!({"res": format!("error: {}", e)}))
+
+    }
 }
 
 
@@ -55,11 +57,10 @@ async fn get_users(
 
     let res_json: Vec<Value> = elemints.into_iter().map(|elemint| {
         json!({
-    	"id": elemint.id, 
+    	"user_uuid": elemint.user_uuid, 
 	"username": elemint.username, 
 	"email": elemint.email, 
 	"created_at": elemint.created_at, 
-	"updated_at": elemint.updated_at, 
 
         })
     
@@ -69,13 +70,11 @@ async fn get_users(
 }
 #[derive(Debug, Deserialize, FromRow)]
 struct Runs {
-    id: uuid::Uuid,
-    user_id: uuid::Uuid,
+    run_uuid: uuid::Uuid,
+    user_uuid: uuid::Uuid,
+    distance_km: f64,
+    completion_time_seconds: i32,
     start_time: chrono::DateTime<Utc>,
-    time_running: PgInterval,
-    distance: f64,
-    created_at: chrono::DateTime<Utc>,
-    updated_at: chrono::DateTime<Utc>,
 }
 
 
@@ -83,18 +82,20 @@ async fn add_runs(
     extract::State(pool): extract::State<PgPool>,
     Json(payload): Json<Runs>,
 ) -> Json<Value> {
-    let query = "INSERT INTO runs (id, user_id, start_time, time_running, distance, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)";
-    sqlx::query(query)
-    	.bind(payload.id)
-	.bind(payload.user_id)
+    let query = "INSERT INTO runs (run_uuid, user_uuid, distance_km, completion_time_seconds, start_time) VALUES ($1, $2, $3, $4, $5)";
+    let result = sqlx::query(query)
+    	.bind(payload.run_uuid)
+	.bind(payload.user_uuid)
+	.bind(payload.distance_km)
+	.bind(payload.completion_time_seconds)
 	.bind(payload.start_time)
-	.bind(payload.time_running)
-	.bind(payload.distance)
-	.bind(payload.created_at)
-	.bind(payload.updated_at)
         .execute(&pool)
         .await;
-        Json(json!({"res": "sucsess"}))
+    match result {
+        Ok(value) => Json(json!({"res": "added"})),
+        Err(e) => Json(json!({"res": format!("error: {}", e)}))
+
+    }
 }
 
 
@@ -110,13 +111,11 @@ async fn get_runs(
 
     let res_json: Vec<Value> = elemints.into_iter().map(|elemint| {
         json!({
-    	"id": elemint.id, 
-	"user_id": elemint.user_id, 
+    	"run_uuid": elemint.run_uuid, 
+	"user_uuid": elemint.user_uuid, 
+	"distance_km": elemint.distance_km, 
+	"completion_time_seconds": elemint.completion_time_seconds, 
 	"start_time": elemint.start_time, 
-	"time_running": elemint.time_running, 
-	"distance": elemint.distance, 
-	"created_at": elemint.created_at, 
-	"updated_at": elemint.updated_at, 
 
         })
     
