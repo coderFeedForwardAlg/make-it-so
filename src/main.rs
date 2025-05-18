@@ -144,11 +144,16 @@ fn add_insert_func(row: &Row, file_path: &str) -> Result<String, io::Error> {
     let funk_name = format!("add_{}", row.name.clone());
     let struct_name = row.name.clone().to_case(Case::Pascal);
     let table_name = row.name.clone();
-    let cols: String = row.cols.iter().map(|col| format!("{}, ", col.name).to_string()).collect::<String>()
-        .trim_end_matches(", ").to_string();
-    let cols_list = row.cols.iter().map(|col| col.name.clone()).collect::<Vec<_>>();
+    let cols_list = row.cols.iter()
+    .filter(|col| !col.auto_gen )
+    .map(|col| { // filter based on if auto generated 
+            col.name.clone()
+    }).collect::<Vec<_>>();
     
-    let bind_feilds = cols_list.iter().enumerate().map(|(i, col)| 
+
+    let cols: String = cols_list.iter().map(|col| format!("{}, ", col).to_string()).collect::<String>()
+        .trim_end_matches(", ").to_string();
+        let bind_feilds = cols_list.iter().enumerate().map(|(i, col)| 
         format!("\t.bind(payload.{})", cols_list[i]))
         .collect::<Vec<_>>().join("\n");
     let feilds = cols_list.iter().enumerate().map(|(i, col)| format!("${}, ", i + 1)).collect::<String>()
@@ -187,7 +192,13 @@ async fn {funk_name}(
     Ok(funk_name.to_string())
 }
 
-// fn add_get_some_func(row: &Row, col: &str, fillter: &str, file_path: &str) -> Result<String, io::Error> {
+// enum MatchVal {
+//     MatchStr,
+//     MatchNum,
+// }
+
+
+// fn add_get_one_func(row: &Row, col: &str, val: MatchVal,  file_path: &str) -> Result<String, io::Error> {
 //     let row_name = row.name.clone();
 //     let func_name = format!("get_{}", row.name.clone());
 //     let struct_name = row.name.clone().to_case(Case::Pascal);
@@ -195,14 +206,14 @@ async fn {funk_name}(
 //         col.name, col.name)
 //         .to_string()).collect::<String>()
 //         .trim_end_matches(", ").to_string();
-    
+//     // let val = val.unwrap();
 
 //     let funk_str = format!(r###"
 
 // async fn {func_name}(
 //     extract::State(pool): extract::State<PgPool>,
 // ) -> Result<Json<Value>, (StatusCode, String)> {{
-//     let query = "SELECT * FROM {row_name}";
+//     let query = "SELECT * FROM {row_name} WHERE {col} == {val}";
 //     let q = sqlx::query_as::<_, {struct_name}>(query);
 
 //     let elemints: Vec<{struct_name}> = q.fetch_all(&pool).await.map_err(|e| {{
@@ -357,7 +368,7 @@ fn main() -> Result<(), io::Error> {
     let rows = create_rows_from_sql("../testing/migrations/0001_data.sql")?;
     // println!("Table names: {:?}", rows.iter().map(|row| row.name.clone()).collect::<Vec<String>>());
 
-    let path = "src/generated_struct.rs";
+    let path = "../testing/src/main.rs";
     let mut func_names = Vec::new();
     add_top_boilerplate(path);
     for row in rows {

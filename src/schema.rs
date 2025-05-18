@@ -32,6 +32,7 @@ pub fn extract_table_schemas(file_path: &str) -> Result<Vec<String>, io::Error> 
 pub struct Col {
     pub name: String,
     pub col_type: String,
+    pub auto_gen: bool
 }
 
 pub fn extract_column_info(schema: &str) -> Vec<Col> {
@@ -39,9 +40,14 @@ pub fn extract_column_info(schema: &str) -> Vec<Col> {
     .map(|s| s.trim())
     .filter(|&s| !s.contains("FOREIGN")).collect();
     let mut columns_info = Vec::new();
-
+    
     for definition in column_definitions {
         let parts: Vec<&str> = definition.split_whitespace().collect();
+        let auto_gen = if parts.contains(&"DEFAULT") {
+            true
+        } else {
+            false
+        };
         if parts.len() >= 2 {
             let name = parts[0].to_string();
             let mut col_type = parts[1].to_string();
@@ -49,11 +55,11 @@ pub fn extract_column_info(schema: &str) -> Vec<Col> {
                 col_type.push(' ');
                 col_type.push_str(parts[2])
             }
-            columns_info.push(Col { name, col_type });
+            columns_info.push(Col { name, col_type, auto_gen});
         } else if parts.len() == 1 {
             // Handle cases with only a name (e.g., constraints)
             let name = parts[0].to_string();
-            columns_info.push(Col { name, col_type: "".to_string() });
+            columns_info.push(Col { name, col_type: "".to_string(), auto_gen});
         }
     }
 

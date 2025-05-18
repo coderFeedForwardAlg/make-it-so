@@ -48,6 +48,8 @@ auth
 
 use this for asking ai to make sql 
 
+
+
 can you write some sql to make a postgreSQL database to
 
 tables should be defined with CREATE TABLE IF NOT EXISTS
@@ -56,6 +58,8 @@ only use these datatypes:
 BOOL, "CHAR", SMALLINT, SMALLSERIAL, INT2, INT, SERIAL, INT4, BIGINT, BIGSERIAL, INT8, REAL, FLOAT4, DOUBLE PRECISION, FLOAT8, VARCHAR, CHAR(N), TEXT, NAME, CITEXT, BYTEA, VOID, INTERVAL, INT8RANGE, INT4RANGE, TSRANGE, TSTZRANGE, DATERANGE, NUMRANGE, MONEY, LTREE, LQUERY, CITEXT1, CUBE, POINT, LINE, LSEG, BOX, PATH, POLYGON, CIRCLE, HSTORE,  TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMP, DATE, TIME, TIMETZ, UUID, INET, CIDR, INET, CIDR, INET, CIDR, INET, CIDR, MACADDR, BIT, VARBIT, JSON, JSONB, JSON, JSONB, JSON, JSONB
 
 use unequ where nesisary (inline not at the bottom of the table)
+
+use uuid_generate_v4() when using uuids. 
 
 dont use numeric, insted use int or float or somting
 
