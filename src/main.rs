@@ -316,7 +316,7 @@ use std::sync::Arc;
 use axum::http::StatusCode;                                                                                                                                                      
 use sqlx::types::chrono::Utc; 
 use tower_http::cors::{AllowOrigin, CorsLayer};
-
+use axum::http::Method;
 "###;
     file.write_all(top_boiler.as_bytes())?; // comment for testing 
 
@@ -352,11 +352,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
     {routs}
     .layer(
         CorsLayer::new()
-            .allow_origin(vec![
-                "http://localhost:8080".parse().unwrap(),
+            .allow_origin(AllowOrigin::list(vec![
+                "http://localhost:3000".parse().unwrap(),
                 "https://example.com".parse().unwrap(),
-            ])
-            .allow_methods(axum::http::Method::GET)
+            ]))
+            .allow_methods([Method::GET, Method::POST])
+            .allow_headers(tower_http::cors::Any)
     )
         .with_state(pool);
 
@@ -367,7 +368,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
 }}
 
 
-"###);
+"###);  //https://tidelabs.github.io/tidechain/tower_http/cors/struct.CorsLayer.html (may help with auth) 
     
     file.write_all(ending.as_bytes())?; // comment for testing 
     Ok(())
