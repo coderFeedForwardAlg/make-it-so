@@ -38,20 +38,20 @@ fn create_type_map() -> HashMap<String, String> {
     insert_multiple(&mut type_map, "String", &["VARCHAR", "CHAR(N)", "TEXT", "NAME", "CITEXT"]);
     insert_multiple(&mut type_map, "Vec<u8>", &["BYTEA"]);
     insert_multiple(&mut type_map, "()", &["VOID"]);
-    insert_multiple(&mut type_map, "PgInterval", &["INTERVAL"]);
-    insert_multiple(&mut type_map, "PgMoney", &["MONEY"]);
-    insert_multiple(&mut type_map, "PgLTree", &["LTREE"]);
-    insert_multiple(&mut type_map, "PgLQuery", &["LQUERY"]);
-    insert_multiple(&mut type_map, "PgCiText", &["CITEXT1"]);
-    insert_multiple(&mut type_map, "PgCube", &["CUBE"]);
-    insert_multiple(&mut type_map, "PgPoint", &["POINT"]);
-    insert_multiple(&mut type_map, "PgLine", &["LINE"]);
-    insert_multiple(&mut type_map, "PgLSeg", &["LSEG"]);
-    insert_multiple(&mut type_map, "PgBox", &["BOX"]);
-    insert_multiple(&mut type_map, "PgPath", &["PATH"]);
-    insert_multiple(&mut type_map, "PgPolygon", &["POLYGON"]);
-    insert_multiple(&mut type_map, "PgCircle", &["CIRCLE"]);
-    insert_multiple(&mut type_map, "PgHstore", &["HSTORE"]);
+    // insert_multiple(&mut type_map, "PgInterval", &["INTERVAL"]);
+    // insert_multiple(&mut type_map, "PgMoney", &["MONEY"]);
+    // insert_multiple(&mut type_map, "PgLTree", &["LTREE"]);
+    // insert_multiple(&mut type_map, "PgLQuery", &["LQUERY"]);
+    // insert_multiple(&mut type_map, "PgCiText", &["CITEXT1"]);
+    // insert_multiple(&mut type_map, "PgCube", &["CUBE"]);
+    // insert_multiple(&mut type_map, "PgPoint", &["POINT"]);
+    // insert_multiple(&mut type_map, "PgLine", &["LINE"]);
+    // insert_multiple(&mut type_map, "PgLSeg", &["LSEG"]);
+    // insert_multiple(&mut type_map, "PgBox", &["BOX"]);
+    // insert_multiple(&mut type_map, "PgPath", &["PATH"]);
+    // insert_multiple(&mut type_map, "PgPolygon", &["POLYGON"]);
+    // insert_multiple(&mut type_map, "PgCircle", &["CIRCLE"]);
+    // insert_multiple(&mut type_map, "PgHstore", &["HSTORE"]);
 
     // Add the new pairs
     // type_map.insert("NUMERIC".to_string(), "bigdecimal::Decimal".to_string());
@@ -66,7 +66,7 @@ fn create_type_map() -> HashMap<String, String> {
     insert_multiple(&mut type_map, "ipnet::IpNet", &["INET", "CIDR"]);
     insert_multiple(&mut type_map, "mac_address::MacAddress", &["MACADDR"]);
     insert_multiple(&mut type_map, "bit_vec::BitVec", &["BIT", "VARBIT"]);
-    insert_multiple(&mut type_map, "Json<T>", &["JSON", "JSONB"]); //  *******  TODO:fix ********* //
+    // insert_multiple(&mut type_map, "Json<T>", &["JSON", "JSONB"]); //  *******  TODO:fix ********* //
     insert_multiple(&mut type_map, "serde_json::Value", &["JSON", "JSONB"]);
     insert_multiple(&mut type_map, "&serde_json::value::RawValue", &["JSON", "JSONB"]);
 
@@ -144,11 +144,16 @@ fn add_insert_func(row: &Row, file_path: &str) -> Result<String, io::Error> {
     let funk_name = format!("add_{}", row.name.clone());
     let struct_name = row.name.clone().to_case(Case::Pascal);
     let table_name = row.name.clone();
-    let cols: String = row.cols.iter().map(|col| format!("{}, ", col.name).to_string()).collect::<String>()
-        .trim_end_matches(", ").to_string();
-    let cols_list = row.cols.iter().map(|col| col.name.clone()).collect::<Vec<_>>();
+    let cols_list = row.cols.iter()
+    .filter(|col| !col.auto_gen )
+    .map(|col| { // filter based on if auto generated 
+            col.name.clone()
+    }).collect::<Vec<_>>();
     
-    let bind_feilds = cols_list.iter().enumerate().map(|(i, col)| 
+
+    let cols: String = cols_list.iter().map(|col| format!("{}, ", col).to_string()).collect::<String>()
+        .trim_end_matches(", ").to_string();
+        let bind_feilds = cols_list.iter().enumerate().map(|(i, col)| 
         format!("\t.bind(payload.{})", cols_list[i]))
         .collect::<Vec<_>>().join("\n");
     let feilds = cols_list.iter().enumerate().map(|(i, col)| format!("${}, ", i + 1)).collect::<String>()
@@ -187,7 +192,13 @@ async fn {funk_name}(
     Ok(funk_name.to_string())
 }
 
-// fn add_get_some_func(row: &Row, col: &str, fillter: &str, file_path: &str) -> Result<String, io::Error> {
+// enum MatchVal {
+//     MatchStr,
+//     MatchNum,
+// }
+
+
+// fn add_get_one_func(row: &Row, col: &str, val: MatchVal,  file_path: &str) -> Result<String, io::Error> {
 //     let row_name = row.name.clone();
 //     let func_name = format!("get_{}", row.name.clone());
 //     let struct_name = row.name.clone().to_case(Case::Pascal);
@@ -195,14 +206,14 @@ async fn {funk_name}(
 //         col.name, col.name)
 //         .to_string()).collect::<String>()
 //         .trim_end_matches(", ").to_string();
-    
+//     // let val = val.unwrap();
 
 //     let funk_str = format!(r###"
 
 // async fn {func_name}(
 //     extract::State(pool): extract::State<PgPool>,
 // ) -> Result<Json<Value>, (StatusCode, String)> {{
-//     let query = "SELECT * FROM {row_name}";
+//     let query = "SELECT * FROM {row_name} WHERE {col} == {val}";
 //     let q = sqlx::query_as::<_, {struct_name}>(query);
 
 //     let elemints: Vec<{struct_name}> = q.fetch_all(&pool).await.map_err(|e| {{
@@ -304,7 +315,7 @@ use std::result::Result;
 use std::sync::Arc;                                                                                                                                                              
 use axum::http::StatusCode;                                                                                                                                                      
 use sqlx::types::chrono::Utc; 
-
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 "###;
     file.write_all(top_boiler.as_bytes())?; // comment for testing 
@@ -325,7 +336,7 @@ fn add_axum_end(funcs: Vec<String>, file_path: &str) -> Result<(), io::Error> {
         format!("\t.route(\"/{func}\", {http_method}({func}))\n").to_string()
     }).collect::<String>();
     let ending = format!(r###"
-
+async fn health() -> String {{"healthy".to_string() }}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {{
@@ -337,7 +348,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
 
     sqlx::migrate!("./migrations").run(&pool).await?;
     let app = Router::new()
+    .route("/health", get(health))
     {routs}
+    .layer(
+        CorsLayer::new()
+            .allow_origin(vec![
+                "http://localhost:8080".parse().unwrap(),
+                "https://example.com".parse().unwrap(),
+            ])
+            .allow_methods(axum::http::Method::GET)
+    )
         .with_state(pool);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8081").await.unwrap();
@@ -353,11 +373,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {{
     Ok(())
 }
 
+// todo: kick off postgress 
+// https://users.rust-lang.org/t/how-to-execute-a-root-command-on-linux/50066/7
+// docker run --name some-postgres -e POSTGRES_USER=dbuser -e POSTGRES_PASSWORD=p -e POSTGRES_DB=work -p 1111:5432 -d postgres
+
 fn main() -> Result<(), io::Error> {
     let rows = create_rows_from_sql("../testing/migrations/0001_data.sql")?;
     // println!("Table names: {:?}", rows.iter().map(|row| row.name.clone()).collect::<Vec<String>>());
 
-    let path = "src/generated_struct.rs";
+    let path = "../testing/src/main.rs";
     let mut func_names = Vec::new();
     add_top_boilerplate(path);
     for row in rows {
