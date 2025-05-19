@@ -292,6 +292,15 @@ async fn {func_name}(
     Ok(func_name.to_string())
 }
 
+/// Writes the necessary import statements and boilerplate code for Axum, Serde, SQLx, and CORS to the specified file.
+///
+/// This function appends a set of standard Rust `use` statements required for generated Axum HTTP handlers and database interaction code.
+///
+/// # Examples
+///
+/// ```
+/// add_top_boilerplate("generated.rs")?;
+/// ```
 fn add_top_boilerplate(file_path: &str) -> Result<(), io::Error> {
     let mut file = OpenOptions::new()
         .write(true) // Enable writing to the file.
@@ -323,6 +332,19 @@ use axum::http::Method;
     Ok(())
 } 
 
+/// Appends the Axum server setup and route registration code to the specified file.
+///
+/// Generates the main function for an Axum-based HTTP server, registering routes for the provided handler function names, configuring CORS, and setting up the PostgreSQL connection pool. The generated code is appended to the given file path.
+///
+/// # Parameters
+/// - `funcs`: A vector of handler function names to register as routes.
+/// - `file_path`: The path to the Rust source file where the generated code will be appended.
+///
+/// # Examples
+///
+/// ```
+/// add_axum_end(vec!["get_users".to_string(), "add_user".to_string()], "src/generated.rs")?;
+/// ```
 fn add_axum_end(funcs: Vec<String>, file_path: &str) -> Result<(), io::Error> {
 
     let mut file = OpenOptions::new()
